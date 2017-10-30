@@ -1,0 +1,8 @@
+site_name: Eref Documentation
+site_description: Documentation for the Electronic Referral System, Eref
+theme: mkdocs
+pages:
+ - ['index.md', 'Background']
+ - ['infrastructure.md', 'Infrastructure']
+ - ['database.md', 'Database']
+ - ['implementation.md', 'Implementation']
