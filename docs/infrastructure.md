@@ -292,6 +292,32 @@ This document was created using MkDocs as was the [MkDocs website](http://www.mk
 on [this page](https://www.sitepoint.com/building-product-documentation-mkdocs/). An MkDocs document is a static website and can hosted by
 any service that supports static sites. This MkDocs document is hosted by [GitHub Pages](https://pages.github.com/). The [Brackets](http://brackets.io/)
 open sourece text editor was used to develop the document on the desktop. An MkDocs document uses HTML Markdown for a desktop development version of a
-document. MkDocs provides a built-in preview server which allows the development version to be viewed in a desktop browser. It also provides a command to
-expand the Markdown version of the document into an HTML version, which is what is deployed. GitHub provides a 
-[cheatsheet for Markdown syntax](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet).
+document. GitHub provides a [cheatsheet for Markdown syntax](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet).
+
+MkDocs provides a built-in preview server which allows the development version to be viewed in a desktop browser at 
+
+    http://127.0.0.1:8000
+
+When it is time to publish a version of a document, use the command
+
+    mkdocs build
+
+to expand the Markdown version of the document into an HTML version into the /site folder. After this define a remote called origin for the document:
+
+    git remote add origin https://github.com/msmapricot/erefdoc
+
+This command references the pre-created GitHub repository erefdoc. Now do
+
+    git add -A
+
+    git commit -a -m 'Comment on new version of eref document'
+   
+    git push --set-upstream origin master
+   
+This will push the master branch of the document to the repository identified by the remote called origin. Then go to
+
+    https://msmapricot.github.io/erefdoc/site
+   
+to view the published document.
+   
+   
