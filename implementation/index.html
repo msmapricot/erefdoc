@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Implementation - Eref Documentation</title>
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.5.0.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+	
+	<script src="../js/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/highlight.pack.js"></script> 
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="..">Eref Documentation</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                    <li >
+                        <a href="..">Background</a>
+                    </li>
+                    <li >
+                        <a href="../infrastructure/">Infrastructure</a>
+                    </li>
+                    <li >
+                        <a href="../database/">Database</a>
+                    </li>
+                    <li class="active">
+                        <a href="./">Implementation</a>
+                    </li>
+                </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                        <i class="fa fa-search"></i> Search
+                    </a>
+                </li>
+                    <li >
+                        <a rel="next" href="../database/">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li class="disabled">
+                        <a rel="prev" >
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+        <li class="main active"><a href="#implementation">Implementation</a></li>
+            <li><a href="#the-superadmin">The Superadmin</a></li>
+            <li><a href="#role-controllers">Role Controllers</a></li>
+            <li><a href="#the-clientmanagercontroller">The ClientManagerController</a></li>
+            <li><a href="#the-data-manager">The Data Manager</a></li>
+            <li><a href="#the-userscontroller">The UsersController</a></li>
+            <li><a href="#jqgrid">jqGrid</a></li>
+            <li><a href="#nowserving">NowServing</a></li>
+            <li><a href="#referral-letters">Referral Letters</a></li>
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="implementation">Implementation</h1>
+<p>Application Eref is implemented as an ASP.NET MVC 4.5 project using Visual Studio 2015 (Community Edition). It uses ASP.NET Identity 2.0 to define a set
+of user roles. Each user role is associated with a separate MVC controller. Controller inheritance is used to share the functionality of a client
+editor across user roles. </p>
+<p>The graphical user interface of Eref is built using Bootstrap 3.0.0. Each user role is associated with its own layout file which defines a Bootstrap
+navbar containing links to the Eref features available to users in the role. The ASP.NET Identity system ensures that a user in a specified role cannot
+visit any pages outside of those allowed to users in that role.</p>
+<h2 id="the-superadmin">The Superadmin</h2>
+<p>Eref defines a pre-registered superadmin user who has privileges to</p>
+<ul>
+<li>add new agencies</li>
+<li>create new roles</li>
+<li>invite new users to register in a pre-determined role</li>
+</ul>
+<p>The credentials for the superadmin are stored in the <code>&lt;appSettings&gt;</code> section of file Web.config and are retrieved on file Startup.cs.</p>
+<p>A new user of Eref has to be invited to register by the superadmin. This is done to prevent new users from selecting their role. The superadmin will
+contact a new user to find out the user name and email address he would like to use to register. The user name and email address will be added to the
+<strong>Invitations</strong> table. When the user registers for Eref, he must use the same user name and email that he provided to the superadmin together with
+a password of his choosing.</p>
+<h2 id="role-controllers">Role Controllers</h2>
+<p>There is an MVC controller defined for each role defined by the superadmin. Each controller defined for a role inherits from ClientManagerController,
+which in turn inherits from UsersController. The role controllers generate the views of application Eref. The implementation of each role controller
+defines methods that are accessible through the menubar defined on the layout file for the role. For example, the AgentController - which implements
+the Client Advocate role - contains methods Home and OurClients invoked from the menubar defined on file</p>
+<p>~/Shared/_Agent.cshtml.</p>
+<p>This is the layout file for the Client Advocate role. Each view returned by the AgentController includes this layout file, thereby ensuring that a
+user in the role of Client Advocate will only have access to methods defined by the AgentController.</p>
+<p>Each other role controllers is implemented the same way: each has a defined layout file that is included in each view returned by the controller.
+The layout file defines a menubar that specifies the methods that users in the role can execute.</p>
+<h2 id="the-clientmanagercontroller">The ClientManagerController</h2>
+<p>The ClientManagerController implements the editor functionality available to the different roles. Each role controller derives from
+ClientManagerController.</p>
+<h2 id="the-data-manager">The Data Manager</h2>
+<p>All access database tables defined by the the ReferrralsDB data context is handled by the DataManager class. The CRUD operations available in each 
+role are defined by the ClientManagerController and implemented by the DataManager.</p>
+<h2 id="the-userscontroller">The UsersController</h2>
+<p>The UsersController controls access to the ASP.NET Identity tables used to store registered users and the roles they are in. The method
+UsersController.Index is the entry point for an authenticated user. The role an authenticated user is in determines the method the user will be
+redirected to from this entry point.</p>
+<h2 id="jqgrid">jqGrid</h2>
+<p>The entire implementation of application Eref is structured around instances of jqGrid appearing in MVC Views. Each jqGrid is initially populated
+by a call to an MVC action made through the url property of the grid. For example, the clientsGrid on file AgencyClients.cshtml is initially populated
+by the call</p>
+<pre><code>"@Url.Action("GetAgencyClients", "Agent")"
+</code></pre>
+<p>which is the value of the url argument to grid clientsGrid. A grid may have an associated subgrid. The clientsGrid has a subgrid called the
+supportingDocumentsGrid. A subgrid is populated when a row of its supergrid is selected. This happens through the function which is the value of the
+onSelectRow argument of the supergrid. For example, when a row of grid clientsGrid is selected, the supportingDocumentsGrid is populated by the value of
+the MVC action call </p>
+<pre><code>"@Url.Action("GetSupportingDocuments", "Agent")"
+</code></pre>
+<p>which is the value of the url argument to subgrid supportingDocumentsGrid.</p>
+<p>Each instance of a jqGride defines a <em>pager</em>. The pager of a jqGrid defines the CRUD operations supported by the grid. Each CRUD operation is implemented 
+by an MVC action of the role controller associated with the grid. </p>
+<p>Initial population of a grid, grid pagination, grid searching and grid CRUD operations are all supported by server side code.</p>
+<p>There is a collection of <a href="http://trirand.com/blog/jqgrid/jqgrid.html">jqGrid Demos</a> that was very helpful during the development of Eref.</p>
+<h2 id="nowserving">NowServing</h2>
+<p>An important concept in the implementation of Eref is the concept of the client currently being served by a registerd Eref user. When a row in the
+clientsGrid defined on AgencyClients.cshtml is selected, the function that is the value of the onSelectRow argument of the grid is invoked. When the
+function is invoked, the value passed to its nowServing argument is the id associated with the client represented by the selected row. The code
+shows that the function is used to populate the subgrid supportingDocumentsGrid through the action call</p>
+<pre><code>"@Url.Action("GetSupportingDocuments", "Agent")"
+</code></pre>
+<p>which is the value of the url argument to the subgrid (see the section on the jqGrid). In the source code of AgencyCLients.cshtml, the line above
+this action call is</p>
+<pre><code>postData: { nowServing: nowServing }
+</code></pre>
+<p>The effect of this line is to have the value of the JavaScript variable nowServing be added to the post to method GetSupportingDocuments. Inspecting
+the definition of this method (found on file ClientManagerController due to controller inheritance) it is seen that the method has an optional
+argument called nowServing. MVC data binding will cause this variable to be bound to the JavaScript variable in the post.</p>
+<p>The subsequnet call to SetNowServing (found on file UsersController due to controller inheritance) will cause the NowServing database field in table
+<strong>AspNetUsers</strong> of the usr who clicked on the client row in the clientsGrid to receive the value of JavaScript variable nowServing.</p>
+<p>Knowing which client is being served is necessary when either the</p>
+<pre><code>  Services for Selected Client
+</code></pre>
+<p>or the</p>
+<pre><code>  Letter for Selected Client
+</code></pre>
+<p>button at the bottom of AgencyClients.cshtml is clicked. Tracing what happens is left as an exercise to the reader.</p>
+<h2 id="referral-letters">Referral Letters</h2>
+<p>The referral letter for a client is generated from data collected in the <strong>Clients</strong> and <strong>Visits</strong> tables. (See the database tab.) Each client is
+represented by a single
+record in the <strong>Clients</strong> table. In addition to a client's name, the <strong>Clients</strong> table contains a boolean data field for each supporting document
+the client has presented to the Client Advocate that he/she is working with. There is a text data field called Notes in the <strong>Clients</strong> table that 
+is used to collect information about a client not captured by any other data field. If a client has dependents, each dependent will be entered
+into the <strong>Clients</strong> table with a pointer back to the client. This is done through the Family data field in the <strong>Clients</strong> table. The Family
+data field of the head of a household will be set to 0. The Family data field of any dependent of a client will be set to the client Id of the client
+who is the head of the household.</p>
+<p>The <strong>Visits</strong> table is related to the <strong>Clients</strong> table by the foreign key stored in its Id field. The table is used to collect service requests for 
+a client. Each record in the <strong>Visits</strong> table is related to a client in the <strong>Clients</strong> table through the Id foreign key and stores the service requests
+made by a client on a particuar date. </p>
+<p>A Client Advocate with an understanding of the Operation ID identification requirements will be able to determine whether the supporting documents
+presented by a client are sufficient for the services a client seeks during a given visit. If the supporting documents are sufficient, the Client
+Advocate may use Eref to generate a referral letter that will list the supporting documents presented together with the services requested by a client.
+If the supporting documents are clearly not sufficient for the services sought, the Client Advocate may work with the client to obtain the documents
+required before sending him/her to Operation ID. If there is a question about the sufficiency of the supporting documents, the Client Advocate may
+generate a referral letter and send the client to Operation ID where a determination will be made. A future release of Eref will use a built in set
+of rules to help determine the sufficiency of documents presented in support of identification services.</p>
+<p>When a client is entered into the <strong>Clients</strong> table, a unique 6 letter token (example: DSQMNJ) will be stored with the client's record in the
+<strong>Clients</strong> table. This token will be included in the referral letter as means of uniquely identifying a client in case the client's name is not
+sufficient. The token is also an anti-forgery safeguard. Any attempt to forge a referral letter will be defeated by the requirement of containing
+a 6 letter token that matches the token associated with a client in the <strong>Clients</strong> table.</p></div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>var base_url = '..';</script>
+        <script data-main="../mkdocs/js/search.js" src="../mkdocs/js/require.js"></script>
+        <script src="../js/base.js"></script><div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form role="form">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
