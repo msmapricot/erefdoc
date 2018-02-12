@@ -315,12 +315,12 @@ In the shell issue the following commands:
 
     git commit -a -m 'Comment on new version of eref document'
    
-    git push --set-upstream origin master
+    git push origin master
    
 This will push the master branch of the document to the repository identified by the remote called origin. To view the published document go to:
 
     https://msmapricot.github.io/erefdoc/site
    
-It will take several minutes before the changes are available.
+It may take several minutes before the changes are available.
    
    
