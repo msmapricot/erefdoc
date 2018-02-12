@@ -7,6 +7,8 @@ The graphical user interface of Eref is built using Bootstrap 3.0.0. Each user r
 navbar containing links to the Eref features available to users in the role. The ASP.NET Identity system ensures that a user in a specified role cannot
 visit any pages outside of those allowed to users in that role.
 
+The source code is the ultimate reference for the implementation.
+
 ## The Superadmin
 Eref defines a pre-registered superadmin user who has privileges to
 
@@ -40,7 +42,7 @@ The ClientManagerController implements the editor functionality available to the
 ClientManagerController.
 
 ## The Data Manager
-All access database tables defined by the the ReferrralsDB data context is handled by the DataManager class. The CRUD operations available in each 
+All access to database tables managed by the the ReferrralsDB data context is handled by the DataManager class. The CRUD operations available in each 
 role are defined by the ClientManagerController and implemented by the DataManager.
 
 ## The UsersController
@@ -64,8 +66,8 @@ the MVC action call
         
 which is the value of the url argument to subgrid supportingDocumentsGrid.
 
-Each instance of a jqGride defines a *pager*. The pager of a jqGrid defines the CRUD operations supported by the grid. Each CRUD operation is implemented 
-by an MVC action of the role controller associated with the grid. 
+Each instance of a jqGride defines a *pager*. The pager of a jqGrid defines the CRUD operations supported by the grid. Each CRUD operation is
+implemented by an MVC action of the role controller associated with the grid. 
 
 Initial population of a grid, grid pagination, grid searching and grid CRUD operations are all supported by server side code.
 
@@ -79,7 +81,7 @@ shows that the function is used to populate the subgrid supportingDocumentsGrid 
 
     "@Url.Action("GetSupportingDocuments", "Agent")"
 
-which is the value of the url argument to the subgrid (see the section on the jqGrid). In the source code of AgencyCLients.cshtml, the line above
+which is the value of the url argument to the subgrid (see the section on the jqGrid). In the source code of AgencyClients.cshtml, the line above
 this action call is
 
     postData: { nowServing: nowServing }
@@ -100,6 +102,32 @@ or the
       Letter for Selected Client
       
 button at the bottom of AgencyClients.cshtml is clicked. Tracing what happens is left as an exercise to the reader.
+
+## Visits
+In most cases a client will visit an agency once and only once. But there will be times when a client will pay a return visit to an ageny for help
+with additional services. For this reason there is a one-to-many relationship between the **Clients** table and the **Visits** table. The Client_Id
+field of the **Visits** table is a foreign key defined by the Id field of table **Clients**.
+
+The first time a client visits an agency, a record corresponding to this visit is created in the **Visits** table. This happens by the call to method 
+AddClientVisit in method GetClientVisits of the DataManager. The parameter nowServing of this method will be set to the Id of the client being served.
+
+Method AddClientVisit returns a Visit entity which has its Id field set (as a side effect) to the index of the visit which has been inserted into the 
+**Visits** table. A [comment](https://stackoverflow.com/questions/5212751/how-can-i-get-id-of-inserted-entity-in-entity-framework) appears at this point 
+in the code to highlight this side effect. When method AddClientVisit returns control to method GetClientVisits, the visit entity it returns has its Id 
+property copied to a VisitViewModel object, vvm, being constructed:
+
+    vvm.Id = visit.Id
+
+The same [comment](https://stackoverflow.com/questions/5212751/how-can-i-get-id-of-inserted-entity-in-entity-framework) is repeated at this point in
+method GetClientVisits.
+
+Without the setting to the VisitViewModel made above, a visit being selected from the table on Visits.cshtml would passs 0 as the value of nowVisiting
+when the visit's row is selected:
+
+    onSelectRow: function (nowVisiting)
+    
+With the setting to the VisitViewModel made above, the Id of the selected row will be passed as the value of nowVisiting which will ultimately point
+back to the identity of the client being served and will allow the Supporting Documents subgrid on Visits.cshtml to be populated.
 
 ## Referral Letters
 The referral letter for a client is generated from data collected in the **Clients** and **Visits** tables. (See the database tab.) Each client is

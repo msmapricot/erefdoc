@@ -64,7 +64,7 @@ indicating that the columns of the database table Agencies would be taken from a
 
 Class Agency is an example of an **entity class**, a class corresponding to a database table. The definition of entity classes is the reason
 for the technology name Entity Framework Code First. There are several entity classes in project Eref and
-each entity class is defined in a separate subproject called ErefEntities of the Visual Studio Eref solution.
+each entity class is defined in a Class Library subproject of the Visual Studio Eref solution called ErefEntities.
 
 To cause the Agencies table to be built, the following three commands were executed in the Package Manager Console.
 
@@ -175,11 +175,11 @@ the Visual Studio Solution Explorer and select Settings from the Welcome to GitH
 remote called origin under the Remotes section.
 
 ## AppHarbor
-AppHarbor (appharbor.com) is a Platform as a Service Provider which uses Amazon Wrb Services infrastructure for hosting applications and Git as a 
+AppHarbor (appharbor.com) is a Platform as a Service Provider which uses Amazon Web Services infrastructure for hosting applications and Git as a 
 versioning tool. When an application is defined at AppHarbor, a Git repository is created to manage versions of the application's deployment.
 The Eref application is defined as an application at AppHarbor to create the production repository of the desktop application. The staging version
 of the desktop application is defined by a repository called SEref. The Eref repository at AppHarbor is maintained at the Catmaran piad subscription
-level and the Seref repository is maintained at the free Canoe subscription level.
+level and the SEref repository is maintained at the free Canoe subscription level.
 
 A Main Street Ministries (MSM) account has been created at AppHarbor for deployment of the application. The credentials for this account are:
 
@@ -213,8 +213,8 @@ new password. To do this on a Windows 10 machine, go to
    
 and remove the AppHarbor entry under Generic Credentials. The next time you push, you will be prompted for your repository password.
 
-An application such as Seref deployed using the free Canoe subscription level at AppHarbor has limitations that make it unsuitable for production
-use. Under the Canoe subscription, the IIS application pool of application Seref has a 20 minute timeout, which forces Seref to spin up its resources
+An application such as SEref deployed using the free Canoe subscription level at AppHarbor has limitations that make it unsuitable for production
+use. Under the Canoe subscription, the IIS application pool of application SEref has a 20 minute timeout, which forces SEref to spin up its resources
 again after each 20 minutes of idle time.
 
 The URL of the Canoe version is
@@ -298,7 +298,7 @@ MkDocs provides a built-in preview server which allows the development version t
 
     http://127.0.0.1:8000
 
-When it is time to publish a version of a document, use the command
+When it is time to publish a version of a document, in a Git BASH shell opened on the folder containing the mkdocs.yml file, issue the command
 
     mkdocs build
 
@@ -306,7 +306,10 @@ to expand the Markdown version of the document into an HTML version into the /si
 
     git remote add origin https://github.com/msmapricot/erefdoc
 
-This command references the pre-created GitHub repository erefdoc. Now do
+This command references the pre-created GitHub repository erefdoc. The remote only  needs to be defined once. It will be remembered by the 
+Git BASH shell. 
+
+In the shell issue the following commands:
 
     git add -A
 
@@ -314,10 +317,10 @@ This command references the pre-created GitHub repository erefdoc. Now do
    
     git push --set-upstream origin master
    
-This will push the master branch of the document to the repository identified by the remote called origin. Then go to
+This will push the master branch of the document to the repository identified by the remote called origin. To view the published document go to:
 
     https://msmapricot.github.io/erefdoc/site
    
-to view the published document.
+It will take several minutes before the changes are available.
    
    
