@@ -20,7 +20,13 @@ The credentials for the superadmin are stored in the `<appSettings>` section of 
 
 A new user of Eref has to be invited to register by the superadmin. This is done to prevent new users from selecting their role. The superadmin will
 contact a new user to find out the user name and email address he would like to use to register. The user name and email address will be added to the
-**Invitations** table. When the user registers for Eref, he must use the same user name and email that he provided to the superadmin together with
+**Invitations** table. More than one user can share the same email address. This is not the default beahavior; it is enabled by the setting
+
+    RequireUniqueEmail = false
+   
+in method ApplicationUserManager.Create on file App_Start/IdentityConfig.cs
+
+When the user registers for Eref, he must use the same user name and email that he provided to the superadmin together with
 a password of his choosing.
 
 ## Role Controllers

@@ -2,29 +2,50 @@
 Eref is a database driven application built using SQL Server technology. In the desktop environment Eref is built using the Sql Server Express database
 engine. In the online environment at AppHarbor a full SQL Server is used. The two versions are compatible with each other with respect to the
 database features used. SQL Server Management Studio 2016 (SSMS) was used to manage both database engines. In the desktop environment, Windows
-Authentication is used to connect to the Sql Server Express database. In the oline enviroment, SQL Server Authentication is used to connect to the 
+Authentication is used to connect to the Sql Server Express database. In the online enviroment, SQL Server Authentication is used to connect to the 
 SQL Server database.
+
+When application Eref was created at AppHarbor, a free version of SQL Server was added on through the AppHarbor interface.
+
+After application Eref was deployed AppHarbor it was run for the first time without knowledge of the database connection string. This worked because
+the connection string configured as the value of SQLSERVER_CONNECTION_STRING configure in the `<appSettings>` section of Web.config is overwritten
+with the connection string for the add-on SQL Server at application deploy time.
+
+When Eref was accessed through
+
+    https://eref.apphb.com
+    
+it presented the Login screen which was used to login the SuperAdmin (sa) with the password configured on Startup.cs. Successful login created the  
+ASP.NET Idenetity 2.0 tables in the database and served up the Home view of the SuperadminController. This view reported the connection string, which
+connection string was then used to connect to the database through SSMS.
+
+This bootstrapping process was followed by creation of the tables managed by the referrals data context as described in the Database Diagram section
+below.
 
 ## Connection String
 In the desktop environment, SSMS was used to create an empty project database by executing the SQL query
 
     create database ErefDB
    
-The Visual Studio Server Explorer (found under the Eref project View menu) was then used to discover the connection string to database ErefDB by creating
-a new Data Connection to it and copying the Connection String property of the data connection as the value of the variable SQLSERVER_CONNECTION_STRING in
+The Visual Studio Server Explorer (found under the Eref project View menu) was then used to discover the connection string to database ErefDB by
+creating a new Data Connection to it and copying the Connection String property of the data connection as the value of the variable DefaultConnection
+in the `<connectionStrings>` section of Web.config. This value is used as the connection string during the creation of the ASP.NET Identity tables
+when the SuperAdmin user, sa, is created. See the section of Entity Framework Code First in the Infrastructure tab.
+
+The connection string is also configured as the value of SQLSERVER_CONNECTION_STRING in
 the `<appSettings>` section of Web.config. This setting is read programatically by the constructors on IdentityDb.cs and ReferallsDB.cs. See the code
 base. Getting the value of the connection string programatically eliminates the need to configure
 the connection string in the usual place, the `<connectionStrings>` section of Web.config.
   
 The online version of Eref is hosted as an application at AppHarbor and it uses a database server provided as an add-on. The add-on database server
-includes a database which serves as the application database, so it is not necessary to create the application database as was done above for the desktop
-version.
+includes a database which serves as the application database, so it is not necessary to create the application database as was done above for the
+desktop version.
 
 The connection string of the SQL Server instance at AppHarbor is found under the Configuration Variables section for the Eref application. The 
 Configuration Variables section states that the configuration variables should be accessed programatically, since the values may be updated by the
 add-on provider without notice. An [AppHarbor knowledge base article](https://support.appharbor.com/kb/add-ons/using-sequelizer) explains that the
 connection string is injected as the value of SQLSERVER_CONNECTION_STRING into the `<appSettings>` section of Web.config at application
-deploy time. This injection overwrites the statically configured value.
+deploy time. This injection overwrites the statically configured value mentioned above.
 
 To discover the value of the connection string in the staging and production environments, the SuperadminController was modified to report the value
 stored in `<appSettings>`. Each time the Super Admin logs in, the value will be displayed by view ~/Views/Superadmin/Home.cshtml. Knowing this value 

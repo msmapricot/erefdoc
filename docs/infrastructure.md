@@ -31,16 +31,48 @@ of IIS under this Url. See the section on configuring IIS below.
 The Eref project should be ported to newer versions of Visual Studio as they become available. Visual Studio 2017 is already avaialable and a port
 should be performed soon.
 
-## Entity Framework Code First
-Since project Eref was just a renaming of the sample project, it was ready to run after the connection string had been established. When it ran for the
-first time the SuperAdmin user, sa, was automatically created by method Startup.Configuration on file Eref/Startup.cs. (The class Startup on file
-Startup.cs is required by the OWIN specification.) The automatic creation of user sa caused the ASP.NET Identity tables to be created in the ErefDB
-database. After these tables were created, file Eref/DataContexts/IdentityDb.cs was created. This file contains a pair of classes which serve to connect 
-the data context to the database via the connection string ErefConnection. (See the Database tab for details about the connection string, which must
-be obtained and configured in Web.config first!)
+## SQL Server Express
+The desktop version of Eref makes use of a SQL Server Express to store information about referrals. 
+Installing SQL Server 2016 Management Studio (SSMS) from Microsoft causes SQL Server Express to be installed as well. The download is large and the
+installation from the download takes some time. Just accept all the defaults.
 
-Next, the first of the two data contexts used by project Eref, the IdentityDb data context, was initialized in the Visual Studio project by executing
-the command 
+The SQL Server Express database for Eref was created by executing the SQL query
+
+    create database ErefDB  
+  
+executed inside of SQL Server Management Studio. With this database selected in SSMS, there are two SQL queries that need to be executed to enable IIS
+to talk to SQL Server. The first query is
+
+       CREATE USER [NT AUTHORITY\NETWORK SERVICE]
+       FOR LOGIN [NT AUTHORITY\NETWORK SERVICE]
+       WITH DEFAULT_SCHEMA = dbo;
+
+This query creates the database user NT AUTHORITY\NETWORK SERVICE. The second query is
+
+      EXEC sp_addrolemember 'db_owner', 'NT AUTHORITY\NETWORK SERVICE'
+      
+This query grants user NT AUTHORITY\NETWORK SERVICE the necessary permissions to communicate with IIS. These same two queries also need to be executed
+in the AppHarbor database to prepare it to communicate with IIS. See below for information about the AppHarbor deployment of Eref.
+
+After this database is created, a default connection string called DefaultConnection is established to it in the `<connectionStrings>` section of file 
+Web.config. This default connection string is used for the automatic creation of the ASP.NET Identity tables and is not used thereafter.
+
+## Entity Framework Code First
+After creating database ErefDB, running project Eref from Visual Studio created the SuperAdmin user, sa, in database ErefDB by
+the use of the default connection string, DefaultConnection (see previous section). This is done by method
+Startup.Configuration on file Eref/Statup.cs. The creation of user sa caused the ASP.NET Identity tables to be created in the ErefDB
+database.   
+
+After these tables were created, file Eref/DataContexts/IdentityDb.cs was created. This file contains a pair of classes which serve to connect 
+the data context to the database via the permanent connection string configured as SQLSERVER_CONNECTION_STRING in the `<appSettings>` section
+of Web.config. See the Database tab for details about the connection string, which must be obtained and configured in Web.config first!
+
+This project used as its starting point the [excellent CodeProject article ASP.NET MVC Security and Creating User Role](https://www.codeproject.com/Articles/1075134/ASP-NET-MVC-Security-And-Creating-User-Role)
+It was necessary to move the class ApplicationDbContext from file Models/IdentityModels.cs on the sample project to file IdentityDb.cs to make 
+things work.
+
+After class DataContexts/IdentityDB is defined (see code base), the first of the two data contexts used by project Eref, the IdentityDb data context, 
+was initialized in the Visual Studio project by executing the command 
 
     PM> Enable-Migrations -ContextTypeName Eref.DataContexts.IdentityDb -MigrationsDirectory DataContexts\IdentityMigrations
 
@@ -52,8 +84,30 @@ Defining class IdentityDb and executing the above two commands is the standard w
 data context. Executing the second command automatically created the file DataContexts/IdentityMigrations/*timestamp*_IntialCreate.cs. It is worth
 studying this file to see how the various tables of AspNet Identity are defined.
 
+For the purposes of project Eref, the AspNetUsers table needed to be extended by the addition of two additional data fields: AgencyId and NowServing.
+This involved adding these fields to class ApplicationUser on file Models/IdentityModels.cs and then adding migrations to cause the changes to be made
+to the database. Before the new migrations can be added, the migration defined by timestamp_InitialCreate.cs may need to be applied, because it might
+be in a pending state, and if it is, no other migration can be applied until its pending state is first changed.
+
+However, the migration contained in file timestamp_InitialCreate.cs creates the ASP.NET Identity tables, which have alreay been automatically created. 
+Attempting to update the database by applying the migration timestamp_InitialCreate.cs will generate an error.  If it is necessary to apply the 
+migration in order to change its pending state, simply comment out its Up method and then run
+
+    PM > update-database -ConfigurationTypeName Eref.DataContexts.IdentityMigrations.Configuration
+    
+This will change the pending state of the migration.
+
+Next add the AgencyId field to class ApplicationUser and run the commands
+
+    PM> add-migration -ConfigurationTypeName Eref.DataContexts.IdentityMigrations.Configuration "AgencyId"
+    
+    PM > update-database -ConfigurationTypeName Eref.DataContexts.IdentityMigrations.Configuration
+
+Run a similar pair of commands after adding the data field NowServing to class ApplicationUser.
+    
 After the IdentityDb data context was created, it was time to create the ReferrralsDB data context. The file Eref/DataContexts/ReferralsDB.cs was
-created for this purpose. Like file IdentityDb.cs, this file connects the ReferralsDB data context to the database via the ErefConnection string.
+created for this purpose. Like file IdentityDb.cs, this file connects the ReferralsDB data context to the database via the SQLSERVER_CONNECTION_STRING
+string.
 
 The file defines class ReferralsDB whose initial definition contained the single DbSet called Agencies, corresponding to the desired Agencies table 
 in the ErefDB database. The declaration of the DbSet in class ReferralsDB was
@@ -64,7 +118,8 @@ indicating that the columns of the database table Agencies would be taken from a
 
 Class Agency is an example of an **entity class**, a class corresponding to a database table. The definition of entity classes is the reason
 for the technology name Entity Framework Code First. There are several entity classes in project Eref and
-each entity class is defined in a Class Library subproject of the Visual Studio Eref solution called ErefEntities.
+each entity class is defined in a Class Library subproject of the Visual Studio Eref solution called ErefEntities. This project is added as a 
+reference to project Eref to enable it to resolve the reference to class Agency.
 
 To cause the Agencies table to be built, the following three commands were executed in the Package Manager Console.
 
@@ -77,9 +132,7 @@ To cause the Agencies table to be built, the following three commands were execu
      PM> update-database -ConfigurationTypeName Eref.DataContexts.ReferralMigrations.Configuration
   
 The last of these commands is the one which creates table Agencies in the ErefDB. It does so by executing the Up method in file
-DataContexts/ReferralMigrations/*timestamp*_InitialCreate.cs, which was automatically created by the second command. (It was not necessary to execute an 
-update-database command for the IdentityMigrations data context because the tables described in IdentityMigrations/*timestamp*_InitialCreate.cs were
-created automatically by ASP.NET Identity when the SuperAdmin user, sa, was registered.)
+DataContexts/ReferralMigrations/*timestamp*_InitialCreate.cs, which was automatically created by the second command.
 
 Each additional database change requires a pair of commands: an add-migration command followed by an update-database command. 
 Executing an add-migration command creates a .cs file in the folder associated with the ConfigurationTypeName. Study this .cs file before executing the
@@ -126,28 +179,6 @@ the bold ApplicationPoolIdentity. Selecting the ellipsis brings up a dialog box 
 NetworkService from the dropdown menu associated with this radio button. After approving this selection, the Identity column of the application pool
 .NET v4.5 will show NetworkService. This is important! The next section shows how to create user NetworkService in the database.
 
-## SQL Server Express
-The desktop version of Eref makes use of a SQL Server Express to store information about referrals. 
-Installing SQL Server 2016 Management Studio (SSMS) from Microsoft causes SQL Server Express to be installed as well. The download is large and the
-installation from the download takes some time. Just accept all the defaults.
-
-The SQL Server Express database for Eref was created by executing the SQL query
-
-    create database ErefDB  
-  
-executed inside of SQL Server Management Studio. With this database selected in SSMS, there are two SQL queries that need to be executed to enable IIS
-to talk to SQL Server. The first query is
-
-       CREATE USER [NT AUTHORITY\NETWORK SERVICE]
-       FOR LOGIN [NT AUTHORITY\NETWORK SERVICE]
-       WITH DEFAULT_SCHEMA = dbo;
-
-This query creates the database user NT AUTHORITY\NETWORK SERVICE. The second query is
-
-      EXEC sp_addrolemember 'db_owner', 'NT AUTHORITY\NETWORK SERVICE'
-      
-This query grants user NT AUTHORITY\NETWORK SERVICE the necessary permissions to communicate with IIS. These same two queries also need to be executed
-in the AppHarbor database to prepare it to communicate with IIS. See below for information about the AppHarbor deployment of Eref.
 
 ## Git for Windows
 Visual Studio 2015 (Community Edition) comes with built-in support for GitHub. A new project can be added to Git source control on the desktop by simply
@@ -166,7 +197,8 @@ A Main Street Ministries (MSM) account has been established at github.com with c
     Email: apricot@msmhouston.org
     Password: <secret>
 
-Git for Windows is used to create a remote to save to the MSM account. The remote is created in the Git BASH shell by opening the shell on the folder which contains the Eref.sln file (folder `C:/Projects/Eref`) and issuing the command
+Git for Windows is used to create a remote to save to the MSM account. The remote is created in the Git BASH shell by opening the shell on the folder 
+which contains the Eref.sln file (folder `C:/Projects/Eref`) and issuing the command
 
     git remote add origin https://github.com/msmapricot/eref.git
     
@@ -187,9 +219,9 @@ A Main Street Ministries (MSM) account has been created at AppHarbor for deploym
     Email: apricot@msmhouston.org
     Password: <secret>
 
-Only user msmapricot can deploy directly to an application in the MSM account. Any other user needing to deploy to an application in the MSM account must
-be declared a collaborator on this application. A collaborator is a user associated with a different account established at AppHarbor. For example, my
-personal account at AppHarbor uses the user name tmhsplb. The user name tmhsplb has been added as a collaborator on the Eref application, thereby
+Only user msmapricot can deploy directly to an application in the MSM account. Any other user needing to deploy to an application in the MSM account 
+must be declared a collaborator on this application. A collaborator is a user associated with a different account established at AppHarbor. For example, 
+my personal account at AppHarbor uses the user name tmhsplb. The user name tmhsplb has been added as a collaborator on the Eref application, thereby
 allowing me to deploy to this application.
 
 The remote configured for Eref in Visual Studio is:
@@ -249,7 +281,7 @@ The staging application SEref uses the free Canoe service and the free Canoe ver
 Almost every page of the Eref application features a grid produced by the jQuery jqGrid component. It was installed into the Eref project by using
 the Package Manager command:
 
-    PM> Install-Package Triand.jqGrid -Version 4.6.0
+    PM> Install-Package Trirand.jqGrid -Version 4.6.0
     
 There is a collection of [jqGrid Demos](http://trirand.com/blog/jqgrid/jqgrid.html) that was very helpful during the development of Eref.
 
@@ -264,7 +296,16 @@ when the application is deployed to AppHarbor. See the Connection String section
 
 ## ELMAH
 Unhandled application errors are caught by ELMAH. Version 2.1.2 of Elamh.Mvc was installed in project Eref by using the Visual Studio NuGet package
-manager. To see ELMAH in action, modify the URL in the browser address bar to, for example,
+manager. By default, the ELMAH log can only be viewd on the server that hosts the application in which ELMAH is installed. To make the ELMAH log
+visible to a client remotley running the application, add
+
+    <elmah>
+       <security allowRemoteAccess="1" /> 
+    </elmah>
+    
+to the `<configuration>` section of file Web.config.
+
+To see ELMAH in action, modify the URL in the browser address bar to, for example,
 
     eref.apphb.com/Admin/Foo
     
@@ -281,6 +322,21 @@ file which may be executed as a query inside SSMS to create table ELMAH_Error.
 
 The ELMAH log is configured by the connection string named ErefConnectionString on Web.config. The value of this connection string is overwritten
 when the application is deployed to AppHarbor. See the Connection String section of the Database tab.
+
+The `<sytem.web>` section of Web.config must configure
+
+    <httpHandlers>
+      <add verb="POST,GET,HEAD" path="elmah.axd" type="Elmah.ErrorLogPageFactory, Elmah" />
+    </httpHandlers>
+    
+ and the `<system.webServer>` section must configure
+
+     <handlers>
+       <add name="Elmah" verb="POST,GET,HEAD" path="elmah.axd" type="Elmah.ErrorLogPageFactory, Elmah" />
+     </handlers>
+    
+in order for ELMAH to log both on the local IIS and on the remote server at AppHarbor. It is also necessary to set the coonection string alias
+as described in the Connection String section of the Database tab.
 
 ## Google Maps
 The referral letter generated by Eref includes a static Google Map showing the location of Main Street Ministries. A new copy of this map is generated

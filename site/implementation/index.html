@@ -115,7 +115,11 @@ visit any pages outside of those allowed to users in that role.</p>
 <p>The credentials for the superadmin are stored in the <code>&lt;appSettings&gt;</code> section of file Web.config and are retrieved on file Startup.cs.</p>
 <p>A new user of Eref has to be invited to register by the superadmin. This is done to prevent new users from selecting their role. The superadmin will
 contact a new user to find out the user name and email address he would like to use to register. The user name and email address will be added to the
-<strong>Invitations</strong> table. When the user registers for Eref, he must use the same user name and email that he provided to the superadmin together with
+<strong>Invitations</strong> table. More than one user can share the same email address. This is not the default beahavior; it is enabled by the setting</p>
+<pre><code>RequireUniqueEmail = false
+</code></pre>
+<p>in method ApplicationUserManager.Create on file App_Start/IdentityConfig.cs</p>
+<p>When the user registers for Eref, he must use the same user name and email that he provided to the superadmin together with
 a password of his choosing.</p>
 <h2 id="role-controllers">Role Controllers</h2>
 <p>There is an MVC controller defined for each role defined by the superadmin. Each controller defined for a role inherits from ClientManagerController,
